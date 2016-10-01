@@ -77,9 +77,9 @@ void txAnalogicoA0(){
   
   itoa(sensorValue, temp, 10);
   
-  msg[2]=c[0];
-  msg[3]=c[1];
-  msg[4]=c[2];  
+  msg[2]=temp[0];
+  msg[3]=temp[1];
+  msg[4]=temp[2];  
 
   vw_send((uint8_t *)msg,MSG_LEN);
   vw_wait_tx(); // Wait until the whole message is gone  
