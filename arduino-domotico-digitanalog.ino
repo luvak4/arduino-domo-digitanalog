@@ -21,6 +21,7 @@ void loop(){
     uint8_t buf[MSG_LEN]={0,0,0,0,0,0,0};
     uint8_t buflen = MSG_LEN;  
     if (vw_get_message(buf, &buflen)){
+      vw_rx_stop(); 
       if (buf[0]==0xAA){
 	// mittente tastiera
 	if (buf[1]==0x06){
@@ -42,8 +43,9 @@ void loop(){
 	  // leggi analogico A0
 	  txOK();
 	  txAnalogicoA0();
-	}	
+	}
       }
+      vw_rx_start(); 
     }
 }
 
