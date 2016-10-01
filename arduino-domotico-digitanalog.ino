@@ -46,6 +46,7 @@ void txStatoRele(){
     // spento
     msg[1]=0x02;
   }
+  delay(100);
   vw_send((uint8_t *)msg,MSG_LEN);
   vw_wait_tx(); // Wait until the whole message is gone  
 }
@@ -60,7 +61,7 @@ void txAnalogicoA0(){
   msg[2]=temp[0];
   msg[3]=temp[1];
   msg[4]=temp[2];  
-
+  delay(100);
   vw_send((uint8_t *)msg,MSG_LEN);
   vw_wait_tx(); // Wait until the whole message is gone  
 }
