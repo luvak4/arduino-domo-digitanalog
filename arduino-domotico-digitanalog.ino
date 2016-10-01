@@ -2,7 +2,10 @@
 const int led_pin = 2;
 const int transmit_pin = 12;
 const int receive_pin = 11;
-
+// max lenght of my message
+const int MSG_LEN = 7;
+// sensore analogico
+const int sensorPin = A0;
 void setup() {
   // LEDs
   pinMode(led_pin, OUTPUT);
@@ -23,41 +26,20 @@ void loop(){
     if (vw_get_message(buf, &buflen)){
       vw_rx_stop(); 
       if (buf[0]==0xAA){
-	// mittente tastiera
-	if (buf[1]==0x06){
-	  // rele ON
-	  txOK();
-          digitalWrite(led_pin,HIGH);
-	}
-	if (buf[1]==0x07){
-	  // rele OFF
- 	  txOK();
-          digitalWrite(led_pin,LOW);
-	}
-	if (buf[1]==0x08){
-	  // leggi stato rele
-	  txOK();
-	  txStatoRele();
-	}
-	if (buf[1]==0x09){
-	  // leggi analogico A0
-	  txOK();
-	  txAnalogicoA0();
-	}
+        switch (buf[1]){
+          case 0x07:digitalWrite(led_pin,HIGH);break;
+          case 0x08:digitalWrite(led_pin,LOW);break;
+          case 0x09:txStatoRele();break;
+          case 0x0A:txAnalogicoA0();break;
+        }
       }
-      vw_rx_start(); 
+      vw_rx_start();
     }
 }
 
-void txOK(){
-  delay(30);
-  char msg[MSG_LEN] = {0xAD,0xFE,0,0,0,0,0};
-  vw_send((uint8_t *)msg,MSG_LEN);
-  vw_wait_tx(); // Wait until the whole message is gone
-}
+
 
 void txStatoRele(){
-  delay(30);
   // acceso
   char msg[MSG_LEN] = {0xAD,0x01,0,0,0,0,0};
   if (!digitalRead(led_pin)){
@@ -72,8 +54,6 @@ void txAnalogicoA0(){
   char temp[3];
   char msg[MSG_LEN] = {0xAD,0x03,0,0,0,0,0};
   int sensorValue = analogRead(sensorPin);
-
-  delay(30);
   
   itoa(sensorValue, temp, 10);
   
