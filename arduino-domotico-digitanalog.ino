@@ -30,11 +30,10 @@ void loop(){
       switch (buf[1]){
       case 0x07:digitalWrite(led_pin,HIGH);break;
       case 0x08:digitalWrite(led_pin,LOW);break;
-      case 0x09:vw_rx_stop();txStatoRele();break;
-      case 0x0A:vw_rx_stop();txAnalogicoA0();break;
+      case 0x09:vw_rx_stop();txStatoRele();vw_rx_start();break;
+      case 0x0A:vw_rx_stop();txAnalogicoA0();vw_rx_start();break;          
       }
     }
-    vw_rx_start();                      // restart radio rx
   }
 }
 
