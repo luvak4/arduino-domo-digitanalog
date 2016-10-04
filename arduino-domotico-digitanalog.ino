@@ -25,14 +25,13 @@ void setup() {
 void loop(){
   uint8_t buf[MSG_LEN]={0,0,0,0,0,0,0}; // empty buffer
   uint8_t buflen = MSG_LEN;             // lenght of buffer
-  if (vw_get_message(buf, &buflen)){    // received a message?
-    vw_rx_stop();                       // stop radio rx
+  if (vw_get_message(buf, &buflen)){    // received a message?    
     if (buf[0]==0xAA){
       switch (buf[1]){
       case 0x07:digitalWrite(led_pin,HIGH);break;
       case 0x08:digitalWrite(led_pin,LOW);break;
-      case 0x09:txStatoRele();break;
-      case 0x0A:txAnalogicoA0();break;
+      case 0x09:vw_rx_stop();txStatoRele();break;
+      case 0x0A:vw_rx_stop();txAnalogicoA0();break;
       }
     }
     vw_rx_start();                      // restart radio rx
