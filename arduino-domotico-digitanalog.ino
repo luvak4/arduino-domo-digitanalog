@@ -6,6 +6,7 @@ const int transmit_pin = 12;
 const int MSG_LEN = 7;
 // analogic port
 const int sensorPin = A0;
+unsigned long millPrec=0;
 ////////////////////////////////
 // setup
 ////////////////////////////////
@@ -25,15 +26,23 @@ void setup() {
 void loop(){
   uint8_t buf[MSG_LEN]={0,0,0,0,0,0,0}; // empty buffer
   uint8_t buflen = MSG_LEN;             // lenght of buffer
-  if (vw_get_message(buf, &buflen)){    // received a message?    
+  if (vw_get_message(buf, &buflen)){    // received a message?
+    digitalWrite(13,HIGH);    
     if (buf[0]==0xAA){
       switch (buf[1]){
       case 0x07:digitalWrite(led_pin,HIGH);break;
       case 0x08:digitalWrite(led_pin,LOW);break;
-      case 0x09:vw_rx_stop();txStatoRele();vw_rx_start();break;
-      case 0x0A:vw_rx_stop();txAnalogicoA0();vw_rx_start();break;          
+      case 0x09:vw_rx_stop();delay(1000);txStatoRele();vw_rx_start();break;
+      case 0x0A:vw_rx_stop();delay(1000);txAnalogicoA0();vw_rx_start();break;
       }
     }
+  }
+  if ((millis()-millPrec)>5000){   
+    millPrec=millis();
+    vw_rx_stop();
+    txAnalogicoA0();
+    delay(200);
+    vw_rx_start();
   }
 }
 
