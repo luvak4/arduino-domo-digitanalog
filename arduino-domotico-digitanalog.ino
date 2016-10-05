@@ -14,7 +14,7 @@ void setup() {
   pinMode(led_pin, OUTPUT);    // led set pin
   vw_set_tx_pin(transmit_pin); // radio set tx pin
   vw_set_rx_pin(receive_pin);  // radio set rx pin
-  vw_setup(2000);              // radio speed
+  vw_setup(1000);              // radio speed
   vw_rx_start();               // radio rx ON
   pinMode(13,OUTPUT);          // out pin 13
   digitalWrite(13,LOW);        // ... set low
@@ -38,10 +38,6 @@ void loop(){
       }
       digitalWrite(13,LOW);    
     }
-  }
-  if ((millis()-millPrec)>5000){   
-    millPrec=millis();
-    txAnalogicoA0();
   }
 }
 
