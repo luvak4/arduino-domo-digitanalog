@@ -1,10 +1,27 @@
 #include <VirtualWire.h>
+//
+#define INDIRIZZO  0
+#define DATOa      1
+#define DATOb      2
+#define DATOc      3
+//
+#define PONTEsuGIU   1234
+#define CIRC_CANTINA 1235
+//
+#define BYTEStoTX  8
+#define RELE_ON     121
+#define RELE_OFF    122
+#define RELE_TOGGLE 123
+#define READ_DATA   124
+
+int  INTERIlocali[4]={0,0,0,0};
+byte BYTEradio[BYTEStoTX];
+byte CIFR[BYTEStoTX]={156,33,183,95,230,63,250,215};
+const unsigned long mask=0x0000FFFF;
+
 const int led_pin = 2;
 const int receive_pin = 11;
 const int transmit_pin = 12;
-// max lenght of my message
-const int MSG_LEN = 7;
-// analogic port
 const int sensorPin = A0;
 unsigned long millPrec=0;
 ////////////////////////////////
@@ -24,44 +41,39 @@ void setup() {
 // loop
 ////////////////////////////////
 void loop(){
-  uint8_t buf[MSG_LEN]={0,0,0,0,0,0,0}; // empty buffer
-  uint8_t buflen = MSG_LEN;             // lenght of buffer
-  char temp[]={0,0};
-  int valore=0;
-  if (vw_get_message(buf, &buflen)){    // received a message?
-    if (buf[0]==0xAA){
-      digitalWrite(13,HIGH);
-      temp[0]=buf[1];
-      temp[1]=buf{2];
-      valore=atoi(temp);
-      switch (valore){
-      case 112:txStato();break;	
-      case 115:digitalWrite(led_pin,HIGH);txStatoRele();break;
-      case 116:digitalWrite(led_pin,LOW);txStatoRele();break;
-      case 117:digitalWrite(led_pin,!digitalRead(led_pin));txStatoRele();break;
+  uint8_t buflen = BYTEStoTX;             
+  if (vw_get_message(BYTEradio, &buflen)){
+    decodeMessage();
+    if (INTERIlocali[INDIRIZZO]==PONTEsuGIU){
+      switch (INTERIlocali[DATOa]){
+      case RELE_ON:
+        digitalWrite(led_pin,HIGH);
+        txStato();
+        break;
+      case RELE_OFF:
+        digitalWrite(led_pin,LOW);
+        txStato();
+        break;
+      case RELE_TOGGLE:
+        digitalWrite(led_pin,!digitalRead(led_pin));
+        txStato();
+        break;
+      case READ_DATA:
+        txStato();
+        break;
       }
-      digitalWrite(13,LOW);    
-    }
+    } 
   }
 }
 
 void txStato(){
-  char msg[MSG_LEN] = {0xAD,0x01,0,0,0,0,0}; // set buffer base-value
+  INTERIlocali[INDIRIZZO]=CIRC_CANTINA;
+  INTERIlocali[DATOa]=analogRead(sensorPin);
+  INTERIlocali[DATOb]=digitalRead(led_pin);
+  INTERIlocali[DATOc]=0;
   vw_rx_stop();
   delayForRadioRxAdj();
-  // rele
-  if (!digitalRead(led_pin)){
-    msg[1]=0x02;                   // overwrite 2nd byte
-  }
-  // analogico
-  int sensorValue = analogRead(sensorPin);   // read A0
-  char temp[3];
-  itoa(sensorValue, temp, 10);  // int to char-array
-  msg[2]=temp[0];               // overwrite 3rd byte
-  msg[3]=temp[1];               // overwrite 4th byte
-  msg[4]=temp[2];               // overwrite 5th byte
-  //  
-  vw_send((uint8_t *)msg,MSG_LEN); // send to tx-radio
+  vw_send((uint8_t *)BYTEradio,BYTEStoTX); // send to tx-radio
   vw_wait_tx();                    // wait until message is gone
   vw_rx_start();
 }
@@ -71,4 +83,34 @@ void delayForRadioRxAdj(){
   // RX-DISPLAY are near and TX blind RX.
   // allows RX to listen regulary
   delay(500);
+}
+
+void decodeMessage(){
+  // de-cifratura
+  byte m=0;
+  cipher();
+  for (int n=0; n<4;n++){
+    INTERIlocali[n]=BYTEradio[m+1];
+    INTERIlocali[n]=INTERIlocali[n] << 8;
+    INTERIlocali[n]=INTERIlocali[n]+BYTEradio[m];
+    m+=2;
+  }
+}
+
+void encodeMessage(){
+  // from struct to byte
+  byte m=0;
+  for (int n=0; n<4;n++){
+    BYTEradio[m]=INTERIlocali[n] & mask;
+    INTERIlocali[n]=INTERIlocali[n] >> 8;
+    BYTEradio[m+1]=INTERIlocali[n] & mask;
+    m+=2;
+  }
+  cipher();
+}
+
+void cipher(){
+  for (byte n=0;n<8;n++){
+    BYTEradio[n]=BYTEradio[n]^CIFR[n];
+  }
 }
