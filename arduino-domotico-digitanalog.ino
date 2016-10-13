@@ -19,7 +19,8 @@ byte BYTEradio[BYTEStoTX];
 byte CIFR[BYTEStoTX]={156,33,183,95,230,63,250,215};
 const unsigned long mask=0x0000FFFF;
 
-const int led_pin = 2;
+const int rele_pin = 2;
+const int led_pin = 13;      // led pin
 const int receive_pin = 11;
 const int transmit_pin = 12;
 uint8_t buflen = BYTEStoTX;    //for rx
@@ -30,14 +31,15 @@ unsigned long millPrec=0;
 // setup
 ////////////////////////////////
 void setup() {
-  pinMode(led_pin, OUTPUT);    // led set pin
+  pinMode(rele_pin, OUTPUT);    // led set pin
+  
   vw_set_tx_pin(transmit_pin); // radio set tx pin
   vw_set_rx_pin(receive_pin);  // radio set rx pin
   vw_setup(1000);              // radio speed
   vw_rx_start();               // radio rx ON
-  pinMode(13,OUTPUT);          // out pin 13
-  digitalWrite(13,LOW);        // ... set low
-  //Serial.begin(9600);
+  pinMode(led_pin,OUTPUT);          // out pin 13
+  digitalWrite(led_pin,LOW);        // ... set low
+  Serial.begin(9600);
 }
 
 ////////////////////////////////
@@ -46,25 +48,30 @@ void setup() {
 void loop(){    
   if (vw_get_message(BYTEradio, &buflen)){
     decodeMessage();
+    digitalWrite(led_pin,HIGH);
+    delay(600);
+    Serial.println(INTERIlocali[DATOa]);
     if (INTERIlocali[INDIRIZZO]==PONTEsuGIU){
       switch (INTERIlocali[DATOa]){
       case RELE_ON:
-        digitalWrite(led_pin,HIGH);
+        digitalWrite(rele_pin,HIGH);
         txStato();
         break;
       case RELE_OFF:
-        digitalWrite(led_pin,LOW);
+        digitalWrite(rele_pin,LOW);
         txStato();
         break;
       case RELE_TOGGLE:
-        digitalWrite(led_pin,!digitalRead(led_pin));
+        digitalWrite(rele_pin,!digitalRead(rele_pin));
         txStato();
         break;
       case READ_DATA:
         txStato();
         break;
-      }
-    } 
+      } 
+    }
+    delay(100);
+    digitalWrite(led_pin,LOW);
   }
 }
 
@@ -76,7 +83,7 @@ void txStato(){
   int temper=temperature;
   INTERIlocali[DATOa]=analogRead(lightPin);
   INTERIlocali[DATOb]=temper;
-  INTERIlocali[DATOc]=digitalRead(led_pin);
+  INTERIlocali[DATOc]=digitalRead(rele_pin);
   encodeMessage();
   vw_rx_stop();
   delayForRadioRxAdj();
@@ -89,7 +96,7 @@ void delayForRadioRxAdj(){
   // this delay is necessary because TX-KEYBOARD and
   // RX-DISPLAY are near and TX blind RX.
   // allows RX to listen regulary
-  delay(500);
+  delay(1000);
 }
 
 void decodeMessage(){
