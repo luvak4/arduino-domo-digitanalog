@@ -22,7 +22,9 @@ const unsigned long mask=0x0000FFFF;
 const int led_pin = 2;
 const int receive_pin = 11;
 const int transmit_pin = 12;
-const int sensorPin = A0;
+uint8_t buflen = BYTEStoTX;    //for rx
+const int lightPin = A0;
+const int temperPin = A1;
 unsigned long millPrec=0;
 ////////////////////////////////
 // setup
@@ -35,13 +37,13 @@ void setup() {
   vw_rx_start();               // radio rx ON
   pinMode(13,OUTPUT);          // out pin 13
   digitalWrite(13,LOW);        // ... set low
+  //Serial.begin(9600);
 }
 
 ////////////////////////////////
 // loop
 ////////////////////////////////
-void loop(){
-  uint8_t buflen = BYTEStoTX;             
+void loop(){    
   if (vw_get_message(BYTEradio, &buflen)){
     decodeMessage();
     if (INTERIlocali[INDIRIZZO]==PONTEsuGIU){
@@ -68,9 +70,14 @@ void loop(){
 
 void txStato(){
   INTERIlocali[INDIRIZZO]=CIRC_CANTINA;
-  INTERIlocali[DATOa]=analogRead(sensorPin);
-  INTERIlocali[DATOb]=digitalRead(led_pin);
-  INTERIlocali[DATOc]=0;
+  int sensorVal = analogRead(temperPin);
+  float voltage = (sensorVal / 1024.0) * 5.0;
+  float temperature = (voltage - .5) * 10000;
+  int temper=temperature;
+  INTERIlocali[DATOa]=analogRead(lightPin);
+  INTERIlocali[DATOb]=temper;
+  INTERIlocali[DATOc]=digitalRead(led_pin);
+  encodeMessage();
   vw_rx_stop();
   delayForRadioRxAdj();
   vw_send((uint8_t *)BYTEradio,BYTEStoTX); // send to tx-radio
