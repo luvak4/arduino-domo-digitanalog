@@ -52,7 +52,7 @@ void loop(){
     decodeMessage();
     digitalWrite(led_pin,HIGH);
     delay(600);
-    Serial.println(INTERIlocali[DATOa]);
+    
     if (INTERIlocali[INDIRIZZO]==PONTEsuGIU){
       switch (INTERIlocali[DATOa]){
       case RELE_ON:
@@ -83,6 +83,8 @@ void txStato(){
   float voltage = (sensorVal / 1024.0) * 5.0;
   float temperature = (voltage - .5) * 10000;
   int temper=temperature;
+  //Serial.println(temperature);
+    //Serial.println(temper);
   INTERIlocali[DATOa]=analogRead(lightPin);
   INTERIlocali[DATOb]=temper;
   INTERIlocali[DATOc]=digitalRead(rele_pin);
