@@ -36,7 +36,7 @@ void setup() {
   digitalWrite(led_pin,LOW);        // ... set low  
   vw_set_tx_pin(transmit_pin); // radio set tx pin
   vw_set_rx_pin(receive_pin);  // radio set rx pin
-  vw_setup(1000);              // radio speed
+  vw_setup(500);              // radio speed
   vw_rx_start();               // radio rx ON
   Serial.begin(9600);
 }
@@ -45,13 +45,13 @@ void setup() {
 ////////////////////////////////
 void loop(){
   ////////////////////////////////
-  delay(1000);
-  txStato();
+  //delay(1000);
+  //txStato();
   ////////////////////////////////
   if (vw_get_message(BYTEradio, &buflen)){
     decodeMessage();
     digitalWrite(led_pin,HIGH);
-    delay(600);
+    //delay(600);
     
     if (INTERIlocali[INDIRIZZO]==PONTEsuGIU){
       switch (INTERIlocali[DATOa]){
@@ -87,7 +87,7 @@ void txStato(){
     //Serial.println(temper);
   INTERIlocali[DATOa]=analogRead(lightPin);
   INTERIlocali[DATOb]=temper;
-  INTERIlocali[DATOc]=digitalRead(rele_pin);
+  INTERIlocali[DATOc]=digitalRead(rele_pin) & 0xFF;
   encodeMessage();
   vw_rx_stop();
   delayForRadioRxAdj();
