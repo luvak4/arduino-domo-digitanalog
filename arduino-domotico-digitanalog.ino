@@ -13,12 +13,12 @@
 #define RELE_OFF    122
 #define RELE_TOGGLE 123
 #define READ_DATA   124
-
+//
 int  INTERIlocali[4]={0,0,0,0};
 byte BYTEradio[BYTEStoTX];
 byte CIFR[BYTEStoTX]={156,33,183,95,230,63,250,215};
 const unsigned long mask=0x0000FFFF;
-
+//
 const int rele_pin = 2;
 const int led_pin = 13;      // led pin
 const int receive_pin = 11;
@@ -32,20 +32,22 @@ unsigned long millPrec=0;
 ////////////////////////////////
 void setup() {
   pinMode(rele_pin, OUTPUT);    // led set pin
-  
+  pinMode(led_pin,OUTPUT);          // out pin 13
+  digitalWrite(led_pin,LOW);        // ... set low  
   vw_set_tx_pin(transmit_pin); // radio set tx pin
   vw_set_rx_pin(receive_pin);  // radio set rx pin
   vw_setup(1000);              // radio speed
   vw_rx_start();               // radio rx ON
-  pinMode(led_pin,OUTPUT);          // out pin 13
-  digitalWrite(led_pin,LOW);        // ... set low
   Serial.begin(9600);
 }
-
 ////////////////////////////////
 // loop
 ////////////////////////////////
-void loop(){    
+void loop(){
+  ////////////////////////////////
+  delay(1000);
+  txStato();
+  ////////////////////////////////
   if (vw_get_message(BYTEradio, &buflen)){
     decodeMessage();
     digitalWrite(led_pin,HIGH);
@@ -100,9 +102,9 @@ void delayForRadioRxAdj(){
 }
 
 void decodeMessage(){
-  // de-cifratura
+  // from byte to struct
   byte m=0;
-  cipher();
+  cipher(); // cifratura
   for (int n=0; n<4;n++){
     INTERIlocali[n]=BYTEradio[m+1];
     INTERIlocali[n]=INTERIlocali[n] << 8;
@@ -120,7 +122,7 @@ void encodeMessage(){
     BYTEradio[m+1]=INTERIlocali[n] & mask;
     m+=2;
   }
-  cipher();
+  cipher(); // cifratura
 }
 
 void cipher(){
