@@ -5,8 +5,8 @@
 #define DATOb      2
 #define DATOc      3
 //
-#define PONTEsuGIU   1234
-#define CIRC_CANTINA 1235
+#define indirMAESTRO   1234
+#define indirCANTINA 1235
 //
 #define BYTEStoTX  8
 #define RELE_ON     121
@@ -16,7 +16,8 @@
 //
 int  INTERIlocali[4]={0,0,0,0};
 byte BYTEradio[BYTEStoTX];
-byte CIFR[BYTEStoTX]={156,33,183,95,230,63,250,215};
+byte CIFR[]={223,205,228,240,43,146,241,87,213,48,235,131,6,81,26,70,34,74,224,27,111,150,22,138,239,200,179,222,231,212};
+
 const unsigned long mask=0x0000FFFF;
 //
 const int rele_pin = 2;
@@ -53,7 +54,7 @@ void loop(){
     digitalWrite(led_pin,HIGH);
     //delay(600);
     
-    if (INTERIlocali[INDIRIZZO]==PONTEsuGIU){
+    if (INTERIlocali[INDIRIZZO]==indirMAESTRO){
       switch (INTERIlocali[DATOa]){
       case RELE_ON:
         digitalWrite(rele_pin,HIGH);
@@ -78,7 +79,7 @@ void loop(){
 }
 
 void txStato(){
-  INTERIlocali[INDIRIZZO]=CIRC_CANTINA;
+  INTERIlocali[INDIRIZZO]=indirCANTINA;
   int sensorVal = analogRead(temperPin);
   float voltage = (sensorVal / 1024.0) * 5.0;
   float temperature = (voltage - .5) * 10000;
