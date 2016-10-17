@@ -18,9 +18,9 @@
 //
 int  INTERIlocali[4]={0,0,0,0};
 byte BYTEradio[BYTEStoTX];
-byte CIFR[]={223,205,228,240,43,146,241,/
-	     87,213,48,235,131,6,81,26,/
-	     70,34,74,224,27,111,150,22,/
+byte CIFR[]={223,205,228,240,43,146,241,//
+	     87,213,48,235,131,6,81,26,//
+	     70,34,74,224,27,111,150,22,//
 	     138,239,200,179,222,231,212};
 
 const unsigned long mask=0x0000FFFF;
@@ -73,10 +73,10 @@ int arrotondaTemp(int valore){
   // valore: per 21,76 deve inserirsi il valore 2176
   // quindi moltiplicare per cento il valore restituito
   // come float
-  char c[];
-  itoa(valore,c,10);
+//  char c[];
+//  itoa(valore,c,10);
   // gli ultimi due numero sono i decimali
-  byte numCar=sizeof(c);
+//  byte numCar=sizeof(c);
   
 }
 
