@@ -33,6 +33,13 @@ uint8_t buflen = BYTEStoTX;    //for rx
 const int lightPin = A0;
 const int temperPin = A1;
 unsigned long millPrec=0;
+// per timer mio
+int dutyCycle = 0;
+unsigned long int Pa;
+unsigned long int Pb;
+byte Minuti=0;
+byte Secondi=0;
+byte numVolte=0;
 ////////////////////////////////
 // setup
 ////////////////////////////////
@@ -50,22 +57,86 @@ void setup() {
 // loop
 ////////////////////////////////
 void loop(){
-  if (vw_get_message(BYTEradio, &buflen)){
-    // decifra
-    decodeMessage();
-    digitalWrite(led_pin,HIGH);
-    // controlal mittente
-    if (INTERIlocali[INDIRIZZO]==indirMAESTRO){
-      // esegue comando
-      switch (INTERIlocali[DATOa]){
-      case RELE_ON:digitalWrite(rele_pin,HIGH);	txStato();break;
-      case RELE_OFF:digitalWrite(rele_pin,LOW);	txStato();break;
-      case RELE_TOGGLE:	digitalWrite(rele_pin,!digitalRead(rele_pin));txStato();break;
-      case READ_DATA:txStato();	break;
-      } 
+  unsigned long int Qa;
+  unsigned long int Qb;
+  int DIFFa;
+  int DIFFb;
+  int Xa;
+  int Xb;
+  //
+  dutyCycle += 1;
+  if (dutyCycle > 9){
+    dutyCycle = 0;
+  }
+  if (dutyCycle > 0){
+    Qa=millis();
+    if (Qa >= Pa){
+      DIFFa=Qa-Pa;
+      Xa = DIFFa - 25;
+      if (Xa >= 0){
+        Pa = Qa;
+        //--------------------------------
+        // da qui passa ogni 0.025 Sec
+        // quarto di decimo di secondo
+        //--------------------------------
+        if (vw_get_message(BYTEradio, &buflen)){
+          // decifra
+          decodeMessage();
+          digitalWrite(led_pin,HIGH);
+          // controlal mittente
+          if (INTERIlocali[INDIRIZZO]==indirMAESTRO){
+            // esegue comando
+            switch (INTERIlocali[DATOa]){
+            case RELE_ON:digitalWrite(rele_pin,HIGH);  txStato();break;
+            case RELE_OFF:digitalWrite(rele_pin,LOW); txStato();break;
+            case RELE_TOGGLE: digitalWrite(rele_pin,!digitalRead(rele_pin));txStato();break;
+            case READ_DATA:txStato(); break;
+            } 
+          }
+          delay(100);
+          digitalWrite(led_pin,LOW);
+        }
+        //----------- fine ---------------
+      }
+    } else {
+      Pa = Qa - Xa;
     }
-    delay(100);
-    digitalWrite(led_pin,LOW);
+  } else {  
+    Qb=millis();
+    if (Qb >= Pb){
+      DIFFb=Qb-Pb;
+      Xb = DIFFb - 1000;
+      if (Xb >= 0){
+        Pb = Qb - Xb;
+        //--------------------------------
+        // da qui passa ogni secondo
+        //--------------------------------
+        Secondi++;
+        if (Secondi>59){
+          Secondi=0;
+          Minuti++;
+        }
+        switch (Minuti){
+          case 11:
+          txStato();
+          break;
+          case 12:
+          txStato();
+          break;
+          case 13:
+          txStato();
+          break;
+          case 14:
+          Minuti=0;
+          break;
+          default:
+          break;
+        }
+        //----------- fine ---------------
+      }
+    } else {
+      Pb = Qb;
+    }      
   }
 }
 
@@ -91,7 +162,7 @@ void txStato(){
   // valori in memoria
   INTERIlocali[DATOa]=analogRead(lightPin);
   INTERIlocali[DATOb]=temper;
-  INTERIlocali[DATOc]=digitalRead(rele_pin) & 0xFF;
+  INTERIlocali[DATOc]=digitalRead(rele_pin);
   // codifica in bytes
   encodeMessage();
   // tx
