@@ -41,22 +41,6 @@ byte CIFR[]={223,205,228,240,43,146,241,//
 	     70,34,74,224,27,111,150,22,//
 	     138,239,200,179,222,231,212};
 const unsigned long mask=0x0000FFFF;
-////////////////////////////////
-// setup
-////////////////////////////////
-void setup() {
-  pinMode(rele_pin, OUTPUT);
-  pinMode(led_pin_rx,OUTPUT);
-  pinMode(led_pin_tx,OUTPUT);  
-  digitalWrite(led_pin_rx,LOW);
-  digitalWrite(led_pin_tx,LOW);
-  vw_set_tx_pin(transmit_pin);
-  vw_set_rx_pin(receive_pin); 
-  vw_setup(VELOCITAstd);              
-  vw_rx_start();
-  tempo=millis():
-  //Serial.begin(9600); // debug
-}
 #define SALITA  1
 #define DISCESA 0
 unsigned long tempo;
@@ -71,6 +55,23 @@ int  luceVALprecedente;
 bool luceSTAattuale; //1=RAISE 0=FALL
 bool luceSTAprecedente; //1=RAISE 0=FALL
 int  luceMINUTIstato;
+////////////////////////////////
+// setup
+////////////////////////////////
+void setup() {
+  pinMode(rele_pin, OUTPUT);
+  pinMode(led_pin_rx,OUTPUT);
+  pinMode(led_pin_tx,OUTPUT);  
+  digitalWrite(led_pin_rx,LOW);
+  digitalWrite(led_pin_tx,LOW);
+  vw_set_tx_pin(transmit_pin);
+  vw_set_rx_pin(receive_pin); 
+  vw_setup(VELOCITAstd);              
+  vw_rx_start();
+  tempo=millis();
+  Serial.begin(9600); // debug
+}
+
 //
 ////////////////////////////////
 // loop
@@ -79,8 +80,12 @@ void loop(){
   ////////////////////////////////
   // ogni minuto
   ////////////////////////////////
-  if ((millis()-tempo)>60000){
+  if ((millis()-tempo)>5000){
     tempo=millis();
+    chkTemperatura();
+    Serial.println(temperVALattuale);
+    Serial.println(temperSTAattuale);
+    Serial.println(temperMINUTIstato);
   }
   ////////////////////////////////
   if (vw_get_message(BYTEradio, &buflen)){
@@ -112,28 +117,35 @@ void chkTemperatura(){
   float temperature = (voltage - .5) * 10000;
   temperVALattuale=temperature;
   int diff=abs(temperVALattuale-temperVALprecedente);
-  if (diff>100){
+  Serial.println("-------------");
+  Serial.println(temperVALattuale);
+  Serial.println(temperVALprecedente);
+  Serial.println(diff);
+  
+  
     // la differenza
     // col valore precedente e' consistente
-    if (temperVALattuale > temperVALprecedente){
+    if (temperVALattuale > (temperVALprecedente+100)){
       temperSTAattuale=SALITA;
+      temperVALprecedente=temperVALattuale;
     } else {
-      if (temperVALattuale < temperVALprecedente){
+      if (temperVALattuale < (temperVALprecedente-100)){
 	temperSTAattuale=DISCESA;	
+  temperVALprecedente=temperVALattuale;
       } else {
 	/// esce
       }
     }
     /////////////////
-    temperVALprecedente=temperVALattuale;
+    
     if (temperSTAattuale==temperSTAprecedente){
       temperMINUTIstato++;
     } else {
       temperMINUTIstato=0;
-      temperSTAprecedente=temperSTAattuale
+      temperSTAprecedente=temperSTAattuale;
     }
     /////////////////
-  }
+  
 }
 
 void txStato(){
