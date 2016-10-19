@@ -79,7 +79,6 @@ unsigned long tempo;
 byte decimi;
 byte secondi;
 byte minuti;
-byte lastCommandAtMinute=0;
 int  temperVALattuale;
 int  temperVALprecedente;
 bool temperSTAattuale; //1=RAISE 0=FALL
@@ -127,11 +126,6 @@ void loop(){
 	////begin ogni minuto //////////
 	chkTemperatura();
 	chkLuce();
-	if ((minuti - lastCommandAtMinute)>59){
-	  // se è da molto che non riceve messaggi
-	  // aumenta al massimo il tempo di AGC
-	  AGCdelay=agcMAX;
-	}
 	////end   ogni minuto //////////          	
 	secondi=0;
 	minuti++;
