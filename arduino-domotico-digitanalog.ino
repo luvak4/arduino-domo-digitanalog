@@ -94,16 +94,16 @@ uint8_t buflen = BYTEStoTX; //for rx
 ////////////////////////////////
 // valori di temperatura e luce
 ////////////////////////////////
-int  temperVAL;
-int  temperVALpre;
-bool temperSTA;    //1=RAISE 0=FALL
-bool temperSTApre; //1=RAISE 0=FALL
-unsigned int  temperMINUTIstato;
+int  tempVAL;
+int  tempVALpre;
+byte tempSTA;    //1=RAISE 0=FALL
+byte tempSTApre; //1=RAISE 0=FALL
+unsigned int  tempMINUTIstato;
 //
 int  luceVAL;
 int  luceVALpre;
-bool luceSTA;    
-bool luceSTApre; 
+byte luceSTA;    
+byte luceSTApre; 
 unsigned int  luceMINUTIstato;
 ////////////////////////////////
 // varie
@@ -169,38 +169,73 @@ void loop(){
       vw_rx_stop();
       // decifra
       decodeMessage();
+      
       ///////primo switch/////////////
       switch (INTERIlocali[INDIRIZZO]){
 	// lettura valori luce/temperatura/stato rele
-      case MASTRa: ROUTINEa(); break;
+      case MASTRa: 
+      ROUTINEa(); 
+      break;
 	// impostazione soglie variabili di luce/temperatura
-      case MASTRb:fxSOGLIE(tempSOGLIA, 10,temperMAXsoglia,tempMINsoglia);break;
-      case MASTRc:fxSOGLIE(tempSOGLIA,-10,temperMAXsoglia,tempMINsoglia);break;
-      case MASTRd:fxSOGLIE(luceSOGLIAa, 5,luceMAXsogliaA,luceMINsogliaA);break;
-      case MASTRe:fxSOGLIE(luceSOGLIAa,-5,luceMAXsogliaA,luceMINsogliaA);break;
-      case MASTRf:fxSOGLIE(luceSOGLIAb, 50,luceMAXsogliaB,luceMINsogliaB);break;
-      case MASTRg:fxSOGLIE(luceSOGLIAb,-50,luceMAXsogliaB,luceMINsogliaB);break;
+      case MASTRb:
+      fxSOGLIE(tempSOGLIA, 10,tempMAXsoglia,tempMINsoglia);
+      ROUTINEb();
+      break;
+      case MASTRc:
+      fxSOGLIE(tempSOGLIA,-10,tempMAXsoglia,tempMINsoglia);
+      ROUTINEb();
+      break;
+      case MASTRd:
+      fxSOGLIE(luceSOGLIAa, 5,luceMAXsogliaA,luceMINsogliaA);
+      ROUTINEb();
+      break;
+      case MASTRe:
+      fxSOGLIE(luceSOGLIAa,-5,luceMAXsogliaA,luceMINsogliaA);
+      ROUTINEb();
+      break;
+      case MASTRf:
+      fxSOGLIE(luceSOGLIAb, 50,luceMAXsogliaB,luceMINsogliaB);
+      ROUTINEb();
+      break;
+      case MASTRg:
+      fxSOGLIE(luceSOGLIAb,-50,luceMAXsogliaB,luceMINsogliaB);
+      ROUTINEb();
+      break;
+      case MASTRh:
+      ROUTINEb();
+      break;
 	// impostazione AGC
-      case MASTRi:fxSOGLIE(AGCdelay, 300,agcMAX,agcMIN);break;
-      case MASTRj:fxSOGLIE(AGCdelay,-300,agcMAX,agcMIN);break;
+      case MASTRi:
+      fxSOGLIE(AGCdelay, 300,agcMAX,agcMIN);
+      ROUTINEc();
+      break;
+      case MASTRj:
+      fxSOGLIE(AGCdelay,-300,agcMAX,agcMIN);
+      ROUTINEc();
+      break;
+      case MASTRk:
+      ROUTINEc();
+      break;      
 	// EEPROM / DEFAULT
-      case MASTRl:EEPROMsave() ;break;
-      case MASTRm:EEPROMload() ;break;
-      case MASTRn:DEFAULTload();break;
+      case MASTRl:
+      EEPROMsave() ;
+      break;
+      case MASTRm:
+      EEPROMload() ;
+      break;
+      case MASTRn:
+      DEFAULTload();
+      break;
 	// invio stati e tempi di temperatra e luce
-      case MASTRo:ROUTINEd()   ;break;
+      case MASTRo:
+      ROUTINEd();
+      break;
       }
-      //////secondo switch (fatto per maggiore compattezza)
-      switch (INTERIlocali[INDIRIZZO]){
-      case MASTRb: MASTRc: MASTRd: MASTRe: MASTRf: MASTRg: MASTRh:
-	ROUTINEb();
-	break;
-      case MASTRi: MASTRi: MASTRj: MASTRk:
-	ROUTINEc();
-	break;	
-      }
+ 
       vw_rx_start();
+      
     }
+    
   }
 }
 
@@ -211,9 +246,9 @@ void ROUTINEd(){
   // imposta l'indirizzo
   INTERIlocali[INDIRIZZO]=CANTId;
   // valori in memoria
-  INTERIlocali[DATOa]=BYTEtoINT(temperSTA,luceSTA);
+  INTERIlocali[DATOa]=BYTEtoINT(tempSTA,luceSTA);
   // usato un 'int' per memorizzare due byte (temperSTA e luceSTA)
-  INTERIlocali[DATOb]=temperMINUTIstato;
+  INTERIlocali[DATOb]=tempMINUTIstato;
   INTERIlocali[DATOc]=luceMINUTIstato;
   //
   tx();
@@ -289,26 +324,26 @@ void chkTemperatura(){
   int sensorVal = analogRead(pin_temp);
   float voltage = (sensorVal / 1024.0) * 5.0;
   float temperature = (voltage - .5) * 10000;
-  temperVAL=temperature;
-  int diff=abs(temperVAL-temperVALpre);
+  tempVAL=temperature;
+  int diff=abs(tempVAL-tempVALpre);
   // la differenza
   // col valore precedente e' consistente
-  if (temperVAL > (temperVALpre+tempSOGLIA)){
-    temperSTA=SALITA;
-    temperVALpre=temperVAL;
+  if (tempVAL > (tempVALpre+tempSOGLIA)){
+    tempSTA=SALITA;
+    tempVALpre=tempVAL;
   } else {
-    if (temperVAL < (temperVALpre-tempSOGLIA)){
-      temperSTA=DISCESA;	
-      temperVALpre=temperVAL;
+    if (tempVAL < (tempVALpre-tempSOGLIA)){
+      tempSTA=DISCESA;	
+      tempVALpre=tempVAL;
     }
   }  
-  if (temperSTA==temperSTApre){
+  if (tempSTA==tempSTApre){
     // lo stato e' lo stesso di prima
-    temperMINUTIstato++;
+    tempMINUTIstato++;
   } else {
     // cambio di stato:
-    temperMINUTIstato=0;
-    temperSTApre=temperSTA;
+    tempMINUTIstato=0;
+    tempSTApre=tempSTA;
   }
 }
 
@@ -319,7 +354,7 @@ void chkTemperatura(){
 // sta nello stato corrente
 ////////////////////////////////
 void chkLuce(){
-  int sensorVal = analogRead(lucePin);
+  int sensorVal = analogRead(pin_light);
   // soglia
   if ((sensorVal>0) & (sensorVal<=luceSOGLIAa)) {
     luceSTA=PORTACHIUSA;
@@ -342,7 +377,7 @@ void chkLuce(){
 // aumenta o decrementa una variabile
 // passata byRef
 ////////////////////////////////
-void fxSOGLIE(int& x, int INCDECx int MINx, int MAXx){
+void fxSOGLIE(int& x, int INCDECx, int MINx, int MAXx){
   x+=INCDECx;
   if (x>MAXx){x=MAXx;}
   if (x<MINx){x=MINx;}
