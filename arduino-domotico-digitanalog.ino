@@ -26,7 +26,7 @@ static const uint8_t A7 = 21;
 #define tempMINsoglia  10
 #define luceMAXsogliaA 50
 #define luceDEFsogliaA 15
-#define luceMINsogliaa 1
+#define luceMINsogliaA 1
 #define luceMAXsogliaB 1000
 #define luceDEFsogliaB 400
 #define luceMINsogliaB 300
@@ -176,8 +176,8 @@ void loop(){
 	// impostazione soglie variabili di luce/temperatura
       case MASTRb:fxSOGLIE(tempSOGLIA, 10,temperMAXsoglia,tempMINsoglia);break;
       case MASTRc:fxSOGLIE(tempSOGLIA,-10,temperMAXsoglia,tempMINsoglia);break;
-      case MASTRd:fxSOGLIE(luceSOGLIAa, 5,luceMAXsogliaA,luceMINsogliaa);break;
-      case MASTRe:fxSOGLIE(luceSOGLIAa,-5,luceMAXsogliaA,luceMINsogliaa);break;
+      case MASTRd:fxSOGLIE(luceSOGLIAa, 5,luceMAXsogliaA,luceMINsogliaA);break;
+      case MASTRe:fxSOGLIE(luceSOGLIAa,-5,luceMAXsogliaA,luceMINsogliaA);break;
       case MASTRf:fxSOGLIE(luceSOGLIAb, 50,luceMAXsogliaB,luceMINsogliaB);break;
       case MASTRg:fxSOGLIE(luceSOGLIAb,-50,luceMAXsogliaB,luceMINsogliaB);break;
 	// impostazione AGC
