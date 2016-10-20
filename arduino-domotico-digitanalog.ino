@@ -3,6 +3,16 @@
 ////////////////////////////////
 // pins
 ////////////////////////////////
+/*
+static const uint8_t A0 = 14;
+static const uint8_t A1 = 15;
+static const uint8_t A2 = 16;
+static const uint8_t A3 = 17;
+static const uint8_t A4 = 18;
+static const uint8_t A5 = 19;
+static const uint8_t A6 = 20;
+static const uint8_t A7 = 21;
+*/
 #define pin_rele   2
 #define pin_rx    11
 #define pin_tx    12
@@ -20,14 +30,14 @@
 #define luceMAXsogliaB 1000
 #define luceDEFsogliaB 400
 #define luceMINsogliaB 300
-#define agcMIN 300;
-#define agcDEF 1000;
-#define agcMAX 1500;
+#define agcMIN 300
+#define agcDEF 1000
+#define agcMAX 1500
 //
 int tempSOGLIA  = tempDEFsoglia;
 int luceSOGLIAa = luceDEFsogliaA;
 int luceSOGLIAb = luceDEFsogliaB;
-int AGCdelay = agcDEF;
+int AGCdelay    = agcDEF;
 ////////////////////////////////
 // indirizzi radio RX
 ////////////////////////////////
@@ -45,13 +55,15 @@ int AGCdelay = agcDEF;
 #define MASTRl 112 // >>> salva  EEPROM  <--(CANTIok)
 #define MASTRm 113 // >>> carica EEPROM  <--(CANTIok)
 #define MASTRn 114 // >>> carica DEFAULT <--(CANTIok)
+#define MASTRo 115 // get temp/luce STATO/tempo
 ////////////////////////////////
 // indirizzi radio TX
 ////////////////////////////////
-#define CANTIa  1000 // get value luce/temp/rele
-#define CANTIb  1001 // get soglie luce/temp
-#define CANTIc  1002 // get AGC 
-#define CANTIok 1003 // get ok
+#define CANTIok 1000 // get ok
+#define CANTIa  1001 // get value luce/temp/rele
+#define CANTIb  1002 // get soglie luce/temp
+#define CANTIc  1003 // get AGC 
+#define CANTId  1004 // get temp/luce STATO/tempo
 ////////////////////////////////
 // comunicazione radio principale
 ////////////////////////////////
@@ -74,10 +86,10 @@ uint8_t buflen = BYTEStoTX; //for rx
 ////////////////////////////////
 // STATI
 ////////////////////////////////
-#define SALITA  1
-#define DISCESA 0
-#define PORTACHIUSA 0
-#define PORTAAPERTA 1
+#define SALITA              1
+#define DISCESA             0
+#define PORTACHIUSA         0
+#define PORTAAPERTA         1
 #define LUCECORRIDOIOACCESA 2
 ////////////////////////////////
 // valori di temperatura e luce
@@ -100,7 +112,7 @@ byte CIFR[]={223,205,228,240,43,146,241,//
 	     87,213,48,235,131,6,81,26,//
 	     70,34,74,224,27,111,150,22,//
 	     138,239,200,179,222,231,212};
-#define mask=0x00FF;
+#define mask 0x00FF
 
 unsigned long tempo;
 byte decimi;
@@ -174,7 +186,9 @@ void loop(){
 	// EEPROM / DEFAULT
       case MASTRl:EEPROMsave() ;break;
       case MASTRm:EEPROMload() ;break;
-      case MASTRn:DEFAULTload();break;	
+      case MASTRn:DEFAULTload();break;
+	// invio stati e tempi di temperatra e luce
+      case MASTRo:ROUTINEd()   ;break;
       }
       //////secondo switch (fatto per maggiore compattezza)
       switch (INTERIlocali[INDIRIZZO]){
@@ -188,6 +202,21 @@ void loop(){
       vw_rx_start();
     }
   }
+}
+
+////////////////////////////////
+// trasmissione valore STATO/tempo
+////////////////////////////////
+void ROUTINEd(){
+  // imposta l'indirizzo
+  INTERIlocali[INDIRIZZO]=CANTId;
+  // valori in memoria
+  INTERIlocali[DATOa]=BYTEtoINT(temperSTA,luceSTA);
+  // usato un 'int' per memorizzare due byte (temperSTA e luceSTA)
+  INTERIlocali[DATOb]=temperMINUTIstato;
+  INTERIlocali[DATOc]=luceMINUTIstato;
+  //
+  tx();
 }
 
 ////////////////////////////////
@@ -243,6 +272,7 @@ void ROUTINEa(){
   // tx
   tx();
 }
+
 ////////////////////////////////
 // leggendo ogni minuto i valori di
 // temperatura, determina se la
