@@ -4,14 +4,14 @@
 // pins
 ////////////////////////////////
 /*
-static const uint8_t A0 = 14;
-static const uint8_t A1 = 15;
-static const uint8_t A2 = 16;
-static const uint8_t A3 = 17;
-static const uint8_t A4 = 18;
-static const uint8_t A5 = 19;
-static const uint8_t A6 = 20;
-static const uint8_t A7 = 21;
+  static const uint8_t A0 = 14;
+  static const uint8_t A1 = 15;
+  static const uint8_t A2 = 16;
+  static const uint8_t A3 = 17;
+  static const uint8_t A4 = 18;
+  static const uint8_t A5 = 19;
+  static const uint8_t A6 = 20;
+  static const uint8_t A7 = 21;
 */
 #define pin_rele   2
 #define pin_rx    11
@@ -59,16 +59,18 @@ int AGCdelay    = agcDEF;
 ////////////////////////////////
 // indirizzi radio TX
 ////////////////////////////////
-#define CANTIok 1000 // get ok
-#define CANTIa  1001 // get value luce/temp/rele
-#define CANTIb  1002 // get soglie luce/temp
-#define CANTIc  1003 // get AGC 
-#define CANTId  1004 // get temp/luce STATO/tempo
+#define CANTIa   1000 // get value luce/temp/rele
+#define CANTIb   1001 // get soglie luce/temp
+#define CANTIc   1002 // get AGC 
+#define CANTId   1003 // get temp/luce STATO/tempo
+#define CANTIokA 1004 // get ok salva eprom
+#define CANTIokB 1005 // get ok carica eprom
+#define CANTIokC 1006 // get ok carica default
 ////////////////////////////////
 // comunicazione radio principale
 ////////////////////////////////
 #define VELOCITAstd   500
-#define INDIRIZZO       0
+#define MESSnum       0
 #define DATOa           1
 #define DATOb           2
 #define DATOc           3
@@ -169,82 +171,79 @@ void loop(){
       vw_rx_stop();
       // decifra
       decodeMessage();
-      
+
       ///////primo switch/////////////
-      switch (INTERIlocali[INDIRIZZO]){
+      switch (INTERIlocali[MESSnum]){
 	// lettura valori luce/temperatura/stato rele
       case MASTRa: 
-      ROUTINEa(); 
-      break;
+	ROU_CANTIa(); 
+	break;
 	// impostazione soglie variabili di luce/temperatura
       case MASTRb:
-      fxSOGLIE(tempSOGLIA, 10,tempMAXsoglia,tempMINsoglia);
-      ROUTINEb();
-      break;
+	fxSOGLIE(tempSOGLIA, 10,tempMAXsoglia,tempMINsoglia);
+	ROU_CANTIb();
+	break;
       case MASTRc:
-      fxSOGLIE(tempSOGLIA,-10,tempMAXsoglia,tempMINsoglia);
-      ROUTINEb();
-      break;
+	fxSOGLIE(tempSOGLIA,-10,tempMAXsoglia,tempMINsoglia);
+	ROU_CANTIb();
+	break;
       case MASTRd:
-      fxSOGLIE(luceSOGLIAa, 5,luceMAXsogliaA,luceMINsogliaA);
-      ROUTINEb();
-      break;
+	fxSOGLIE(luceSOGLIAa, 5,luceMAXsogliaA,luceMINsogliaA);
+	ROU_CANTIb();
+	break;
       case MASTRe:
-      fxSOGLIE(luceSOGLIAa,-5,luceMAXsogliaA,luceMINsogliaA);
-      ROUTINEb();
-      break;
+	fxSOGLIE(luceSOGLIAa,-5,luceMAXsogliaA,luceMINsogliaA);
+	ROU_CANTIb();
+	break;
       case MASTRf:
-      fxSOGLIE(luceSOGLIAb, 50,luceMAXsogliaB,luceMINsogliaB);
-      ROUTINEb();
-      break;
+	fxSOGLIE(luceSOGLIAb, 50,luceMAXsogliaB,luceMINsogliaB);
+	ROU_CANTIb();
+	break;
       case MASTRg:
-      fxSOGLIE(luceSOGLIAb,-50,luceMAXsogliaB,luceMINsogliaB);
-      ROUTINEb();
-      break;
+	fxSOGLIE(luceSOGLIAb,-50,luceMAXsogliaB,luceMINsogliaB);
+	ROU_CANTIb();
+	break;
       case MASTRh:
-      ROUTINEb();
-      break;
+	ROU_CANTIb();
+	break;
 	// impostazione AGC
       case MASTRi:
-      fxSOGLIE(AGCdelay, 300,agcMAX,agcMIN);
-      ROUTINEc();
-      break;
+	fxSOGLIE(AGCdelay, 300,agcMAX,agcMIN);
+	ROU_CANTIc();
+	break;
       case MASTRj:
-      fxSOGLIE(AGCdelay,-300,agcMAX,agcMIN);
-      ROUTINEc();
-      break;
+	fxSOGLIE(AGCdelay,-300,agcMAX,agcMIN);
+	ROU_CANTIc();
+	break;
       case MASTRk:
-      ROUTINEc();
-      break;      
+	ROU_CANTIc();
+	break;      
 	// EEPROM / DEFAULT
       case MASTRl:
-      EEPROMsave() ;
-      break;
+	EEPROMsave() ;
+	break;
       case MASTRm:
-      EEPROMload() ;
-      break;
+	EEPROMload() ;
+	break;
       case MASTRn:
-      DEFAULTload();
-      break;
+	DEFAULTload();
+	break;
 	// invio stati e tempi di temperatra e luce
       case MASTRo:
-      ROUTINEd();
-      break;
+	ROU_CANTId();
+	break;
       }
- 
       vw_rx_start();
-      
     }
-    
   }
 }
 
 ////////////////////////////////
 // trasmissione valore STATO/tempo
 ////////////////////////////////
-void ROUTINEd(){
+void ROU_CANTId(){
   // imposta l'indirizzo
-  INTERIlocali[INDIRIZZO]=CANTId;
+  INTERIlocali[MESSnum]=CANTId;
   // valori in memoria
   INTERIlocali[DATOa]=BYTEtoINT(tempSTA,luceSTA);
   // usato un 'int' per memorizzare due byte (temperSTA e luceSTA)
@@ -257,9 +256,9 @@ void ROUTINEd(){
 ////////////////////////////////
 // trasmissione valore AGC
 ////////////////////////////////
-void ROUTINEc(){
+void ROU_CANTIc(){
   // imposta l'indirizzo
-  INTERIlocali[INDIRIZZO]=CANTIc;
+  INTERIlocali[MESSnum]=CANTIc;
   // valori in memoria
   INTERIlocali[DATOa]=AGCdelay;
   INTERIlocali[DATOb]=0;
@@ -271,9 +270,9 @@ void ROUTINEc(){
 ////////////////////////////////
 // trasmissione soglie
 ////////////////////////////////
-void ROUTINEb(){
+void ROU_CANTIb(){
   // imposta l'indirizzo
-  INTERIlocali[INDIRIZZO]=CANTIb;
+  INTERIlocali[MESSnum]=CANTIb;
   // valori in memoria
   INTERIlocali[DATOa]=tempSOGLIA;
   INTERIlocali[DATOb]=luceSOGLIAa;
@@ -285,7 +284,7 @@ void ROUTINEb(){
 ////////////////////////////////
 // trasmissione valori sensori
 ////////////////////////////////
-void ROUTINEa(){
+void ROU_CANTIa(){
   // esegue comando
   switch (INTERIlocali[DATOa]){
   case RELE_ON:digitalWrite(pin_rele,HIGH); break;
@@ -294,7 +293,7 @@ void ROUTINEa(){
   case READ_DATA: break;
   }
   // imposta l'indirizzo
-  INTERIlocali[INDIRIZZO]=CANTIa;
+  INTERIlocali[MESSnum]=CANTIa;
   // recupera valori
   int sensorVal = analogRead(pin_temp);
   float voltage = (sensorVal / 1024.0) * 5.0;
@@ -314,7 +313,7 @@ void ROUTINEa(){
 // temperatura sta salendo o diminuendo.
 // Quando cambia di stato (salita-diminuzione
 // o viceversa) inizia un conteggio
-// (quanti minuti Ã¨ in salita, quanti in discesa)
+// (quanti minuti e' in salita, quanti in discesa)
 // Viene usata una soglia di temperatura
 // per evitare oscillazioni di su e giu
 // Prende nota dei minuti che la temperatura
@@ -371,7 +370,6 @@ void chkLuce(){
     luceSTApre=luceSTA;
   }
 }
-
 
 ////////////////////////////////
 // aumenta o decrementa una variabile
