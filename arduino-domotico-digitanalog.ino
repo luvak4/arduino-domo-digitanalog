@@ -42,20 +42,24 @@ int AGCdelay    = agcDEF;
 // indirizzi radio RX
 ////////////////////////////////
 #define MASTRa 101 // get luce/temp/rele <--(CANTIa)
-#define MASTRb 102 // !- set temp (soglia) up   +10
-#define MASTRc 103 // !- set temp (soglia) down -10
-#define MASTRd 104 // !- set luce (soglia a) up +5
-#define MASTRe 105 // !- set luce (soglia a) dn -5
-#define MASTRf 106 // !- set luce (soglia b) up +50
-#define MASTRg 107 // !- set luce (soglia b) dn -50
+#define MASTRb 102 // !- set temp (soglia) up   +10 <--(CANTIb)
+#define MASTRc 103 // !- set temp (soglia) down -10 <--(CANTIb)
+#define MASTRd 104 // !- set luce (soglia a) up +5  <--(CANTIb)
+#define MASTRe 105 // !- set luce (soglia a) dn -5  <--(CANTIb)
+#define MASTRf 106 // !- set luce (soglia b) up +50 <--(CANTIb)
+#define MASTRg 107 // !- set luce (soglia b) dn -50 <--(CANTIb)
 #define MASTRh 108 // !---> get soglie   <--(CANTIb)
-#define MASTRi 109 // !- set AGC delay up +100
-#define MASTRj 110 // !- set AGC delay dn -100
+#define MASTRi 109 // !- set AGC delay up +100 <--(CANTIc)
+#define MASTRj 110 // !- set AGC delay dn -100 <--(CANTIc)
 #define MASTRk 111 // !---> AGC delay    <--(CANTIc)
-#define MASTRl 112 // >>> salva  EEPROM  <--(CANTIok)
-#define MASTRm 113 // >>> carica EEPROM  <--(CANTIok)
-#define MASTRn 114 // >>> carica DEFAULT <--(CANTIok)
+#define MASTRl 112 // >>> salva  EEPROM  <--(CANTIokA)
+#define MASTRm 113 // >>> carica EEPROM  <--(CANTIokB)
+#define MASTRn 114 // >>> carica DEFAULT <--(CANTIokC)
 #define MASTRo 115 // get temp/luce STATO/tempo
+#define MASTRp 116 // rele ON     <-- (CANTIa)
+#define MASTRq 117 // rele OFF    <-- (CANTIa)
+#define MASTRr 118 // rele toggle <-- (CANTIa)
+
 ////////////////////////////////
 // indirizzi radio TX
 ////////////////////////////////
@@ -174,63 +178,89 @@ void loop(){
 
       ///////primo switch/////////////
       switch (INTERIlocali[MESSnum]){
-	// lettura valori luce/temperatura/stato rele
-      case MASTRa: 
+      case MASTRa:
+	// invio valori RAW di luce e temperatura
 	ROU_CANTIa(); 
 	break;
 	// impostazione soglie variabili di luce/temperatura
       case MASTRb:
+	// incremento soglia temperatura
 	fxSOGLIE(tempSOGLIA, 10,tempMAXsoglia,tempMINsoglia);
 	ROU_CANTIb();
 	break;
       case MASTRc:
+	// decremento soglia temperatura
 	fxSOGLIE(tempSOGLIA,-10,tempMAXsoglia,tempMINsoglia);
 	ROU_CANTIb();
 	break;
       case MASTRd:
+	// incremento prima soglia luce
 	fxSOGLIE(luceSOGLIAa, 5,luceMAXsogliaA,luceMINsogliaA);
 	ROU_CANTIb();
 	break;
       case MASTRe:
+	// decremento prima soglia luce
 	fxSOGLIE(luceSOGLIAa,-5,luceMAXsogliaA,luceMINsogliaA);
 	ROU_CANTIb();
 	break;
       case MASTRf:
+	// incremento seconda soglia luce
 	fxSOGLIE(luceSOGLIAb, 50,luceMAXsogliaB,luceMINsogliaB);
 	ROU_CANTIb();
 	break;
       case MASTRg:
+	// decremento seconda soglia luce
 	fxSOGLIE(luceSOGLIAb,-50,luceMAXsogliaB,luceMINsogliaB);
 	ROU_CANTIb();
 	break;
       case MASTRh:
+	// invio SOGLIE
 	ROU_CANTIb();
 	break;
-	// impostazione AGC
       case MASTRi:
+	// aumenta AGC
 	fxSOGLIE(AGCdelay, 300,agcMAX,agcMIN);
 	ROU_CANTIc();
 	break;
       case MASTRj:
+	// diminuisce AGC
 	fxSOGLIE(AGCdelay,-300,agcMAX,agcMIN);
 	ROU_CANTIc();
 	break;
       case MASTRk:
+	// invio valore AGC
 	ROU_CANTIc();
 	break;      
-	// EEPROM / DEFAULT
       case MASTRl:
+	// salva valori su EEPROM
 	EEPROMsave() ;
 	break;
       case MASTRm:
+	// carica valori da EEPROM
 	EEPROMload() ;
 	break;
       case MASTRn:
+	// carica valori di default
 	DEFAULTload();
 	break;
-	// invio stati e tempi di temperatra e luce
       case MASTRo:
+	// invio STATI e tempi di temperatura e luce	
 	ROU_CANTId();
+	break;
+      case MASTRp:
+	// rele ON
+	digitalWrite(pin_rele,HIGH);
+	ROU_CANTIa();
+	break;
+      case MASTRq:
+	// rele OFF
+	digitalWrite(pin_rele,LOW)	
+	ROU_CANTIa();
+	break;	
+      case MASTRr:
+	// rele TOGGLE
+	digitalWrite(pin_rele,!digitalRead(pin_rele))	
+	ROU_CANTIa();
 	break;
       }
       vw_rx_start();
@@ -285,13 +315,6 @@ void ROU_CANTIb(){
 // trasmissione valori sensori
 ////////////////////////////////
 void ROU_CANTIa(){
-  // esegue comando
-  switch (INTERIlocali[DATOa]){
-  case RELE_ON:digitalWrite(pin_rele,HIGH); break;
-  case RELE_OFF:digitalWrite(pin_rele,LOW); break;
-  case RELE_TOGGLE: digitalWrite(pin_rele,!digitalRead(pin_rele));break;
-  case READ_DATA: break;
-  }
   // imposta l'indirizzo
   INTERIlocali[MESSnum]=CANTIa;
   // recupera valori
