@@ -83,13 +83,6 @@ int     INTERIlocali[4]={0,0,0,0};
 byte    BYTEradio[BYTEStoTX];
 uint8_t buflen = BYTEStoTX; //for rx
 ////////////////////////////////
-// comandi da decodificare
-////////////////////////////////
-#define RELE_ON     121
-#define RELE_OFF    122
-#define RELE_TOGGLE 123
-#define READ_DATA   124
-////////////////////////////////
 // STATI
 ////////////////////////////////
 #define SALITA              1
@@ -175,7 +168,7 @@ void loop(){
       vw_rx_stop();
       // decifra
       decodeMessage();
-
+//Serial.println(MESSnum);
       ///////primo switch/////////////
       switch (INTERIlocali[MESSnum]){
       case MASTRa:
@@ -224,6 +217,7 @@ void loop(){
 	break;
       case MASTRj:
 	// diminuisce AGC
+ //AGCdelay-=300;
 	fxSOGLIE(AGCdelay,-300,agcMAX,agcMIN);
 	ROU_CANTIc();
 	break;
@@ -254,12 +248,12 @@ void loop(){
 	break;
       case MASTRq:
 	// rele OFF
-	digitalWrite(pin_rele,LOW)	
+	digitalWrite(pin_rele,LOW);
 	ROU_CANTIa();
 	break;	
       case MASTRr:
 	// rele TOGGLE
-	digitalWrite(pin_rele,!digitalRead(pin_rele))	
+	digitalWrite(pin_rele,!digitalRead(pin_rele));
 	ROU_CANTIa();
 	break;
       }
@@ -398,10 +392,25 @@ void chkLuce(){
 // aumenta o decrementa una variabile
 // passata byRef
 ////////////////////////////////
-void fxSOGLIE(int& x, int INCDECx, int MINx, int MAXx){
+void fxSOGLIE(int& x, int INCDECx, int MAXx, int MINx) {
+//if (INCDECx>0){
   x+=INCDECx;
-  if (x>MAXx){x=MAXx;}
-  if (x<MINx){x=MINx;}
+//} else {
+//  INCDECx=abs(INCDECx);
+//  x-=INCDECx;
+//}
+  int b=x;
+  Serial.println(b);
+  Serial.println(MAXx);
+  Serial.println(MINx);
+  
+ // x+=INCDECx;
+ if (b>MAXx){
+  x=MAXx;
+ }
+ if (b<MINx){
+  x=MINx;
+  }
 }
 
 void tx(){
