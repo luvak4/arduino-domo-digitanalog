@@ -1,29 +1,36 @@
 ////////////////////////////////
 // DIGITAL-ANALOG
 ////////////////////////////////
+
+/*
+  	      	+-----------+
+  	      	|           |
+   light    --->| A0      2 |---> rele
+   temperat --->| A1        |
+                |           |
+   radio rx --->| 11     12 |---> radio tx
+  		|           |
+  		+-----------+
+                   ARDUINO
+                  ATMEGA 328
+*/
+
+/*
+* configurazioni
+*/
 #include <VirtualWire.h>
 #include <EEPROM.h>
-////////////////////////////////
-// pins
-////////////////////////////////
 /*
-  static const uint8_t A0 = 14;
-  static const uint8_t A1 = 15;
-  static const uint8_t A2 = 16;
-  static const uint8_t A3 = 17;
-  static const uint8_t A4 = 18;
-  static const uint8_t A5 = 19;
-  static const uint8_t A6 = 20;
-  static const uint8_t A7 = 21;
+** pins
 */
 #define pin_rele   2
 #define pin_rx    11
 #define pin_tx    12
 #define pin_light A0
 #define pin_temp  A1
-////////////////////////////////
-// soglie
-////////////////////////////////
+/*
+** soglie
+*/
 #define tempMAXsoglia  1000
 #define tempDEFsoglia  100
 #define tempMINsoglia  10
@@ -36,48 +43,42 @@
 #define agcMIN 300
 #define agcDEF 1000
 #define agcMAX 1500
-//
-int tempSOGLIA  = tempDEFsoglia;
-int luceSOGLIAa = luceDEFsogliaA;
-int luceSOGLIAb = luceDEFsogliaB;
-int AGCdelay    = agcDEF;
-////////////////////////////////
-// indirizzi radio RX
-////////////////////////////////
-#define MASTRa 101 // get luce/temp/rele <--(CANTIa)
-#define MASTRb 102 // !- set temp (soglia) up   +10 <--(CANTIb)
-#define MASTRc 103 // !- set temp (soglia) down -10 <--(CANTIb)
-#define MASTRd 104 // !- set luce (soglia a) up +5  <--(CANTIb)
-#define MASTRe 105 // !- set luce (soglia a) dn -5  <--(CANTIb)
-#define MASTRf 106 // !- set luce (soglia b) up +50 <--(CANTIb)
-#define MASTRg 107 // !- set luce (soglia b) dn -50 <--(CANTIb)
-#define MASTRh 108 // !---> get soglie   <--(CANTIb)
-#define MASTRi 109 // !- set AGC delay up +100 <--(CANTIc)
-#define MASTRj 110 // !- set AGC delay dn -100 <--(CANTIc)
-#define MASTRk 111 // !---> AGC delay    <--(CANTIc)
-#define MASTRl 112 // >>> salva  EEPROM  <--(CANTIokA)
-#define MASTRm 113 // >>> carica EEPROM  <--(CANTIokB)
-#define MASTRn 114 // >>> carica DEFAULT <--(CANTIokC)
-#define MASTRo 115 // get temp/luce STATO/tempo
-#define MASTRp 116 // rele ON     <-- (CANTIa)
-#define MASTRq 117 // rele OFF    <-- (CANTIa)
-#define MASTRr 118 // rele toggle <-- (CANTIa)
-
-////////////////////////////////
-// indirizzi radio TX
-////////////////////////////////
+/*
+** domande (IN)
+*/
+#define MASTRa 101 // get luce/temp/rele               (CANTIa)
+#define MASTRb 102 // !- set temp (soglia) up   +10    (CANTIb)
+#define MASTRc 103 // !- set temp (soglorgia) down -10 (CANTIb)
+#define MASTRd 104 // !- set luce (soglia a) up +5     (CANTIb)
+#define MASTRe 105 // !- set luce (soglia a) dn -5     (CANTIb)
+#define MASTRf 106 // !- set luce (soglia b) up +50    (CANTIb)
+#define MASTRg 107 // !- set luce (soglia b) dn -50    (CANTIb)
+#define MASTRh 108 // !---> get soglie                 (CANTIb)
+#define MASTRi 109 // !- set AGC delay up +300         (CANTIc)
+#define MASTRj 110 // !- set AGC delay dn -300         (CANTIc)
+#define MASTRk 111 // !---> AGC delay                  (CANTIc)
+#define MASTRl 112 // >>> salva  EEPROM                (CANTIokA)
+#define MASTRm 113 // >>> carica EEPROM                (CANTIokB)
+#define MASTRn 114 // >>> carica DEFAULT               (CANTIokC)
+#define MASTRo 115 // get temp/luce STATO/tempo        (CANTId)
+#define MASTRp 116 // rele ON                          (CANTIa)
+#define MASTRq 117 // rele OFF                         (CANTIa)
+#define MASTRr 118 // rele toggle                      (CANTIa)
+/*
+** risposte (OUT)
+*/
 #define CANTIa   1000 // get value luce/temp/rele
 #define CANTIb   1001 // get soglie luce/temp
-#define CANTIc   1002 // get AGC 
+#define CANTIc   1002 // get AGC
 #define CANTId   1003 // get temp/luce STATO/tempo
 #define CANTIokA 1004 // get ok salva eprom
 #define CANTIokB 1005 // get ok carica eprom
 #define CANTIokC 1006 // get ok carica default
-////////////////////////////////
-// comunicazione radio principale
-////////////////////////////////
+/*
+** comunicazione radio principale
+*/
 #define VELOCITAstd   500
-#define MESSnum       0
+#define MESSnum         0
 #define DATOa           1
 #define DATOb           2
 #define DATOc           3
@@ -85,17 +86,19 @@ int AGCdelay    = agcDEF;
 int     INTERIlocali[4]={0,0,0,0};
 byte    BYTEradio[BYTEStoTX];
 uint8_t buflen = BYTEStoTX; //for rx
-////////////////////////////////
-// STATI
-////////////////////////////////
+/*
+** stati
+*/
 #define SALITA              1
 #define DISCESA             0
-#define PORTACHIUSA         0
-#define PORTAAPERTA         1
-#define LUCECORRIDOIOACCESA 2
-////////////////////////////////
-// valori di temperatura e luce
-////////////////////////////////
+#define LUCEpoca            0
+#define LUCEmedia           1
+#define LUCEtanta           2
+#define RELEon              1
+#define RELEoff             0
+/*
+** variabili temperatura e luce
+*/
 int  tempVAL;
 int  tempVALpre;
 byte tempSTA;    //1=RAISE 0=FALL
@@ -104,59 +107,62 @@ unsigned int  tempMINUTIstato;
 //
 int  luceVAL;
 int  luceVALpre;
-byte luceSTA;    
-byte luceSTApre; 
+byte luceSTA;
+byte luceSTApre;
 unsigned int  luceMINUTIstato;
-////////////////////////////////
-// varie
-////////////////////////////////
+//
+int tempSOGLIA  = tempDEFsoglia;
+int luceSOGLIAa = luceDEFsogliaA;
+int luceSOGLIAb = luceDEFsogliaB;
+int AGCdelay    = agcDEF;
+/*
+** varie
+*/
 byte CIFR[]={223,205,228,240,43,146,241,//
 	     87,213,48,235,131,6,81,26,//
 	     70,34,74,224,27,111,150,22,//
 	     138,239,200,179,222,231,212};
 #define mask 0x00FF
-
 unsigned long tempo;
 byte decimi;
 byte secondi;
 byte minuti;
-// 
-////////////////////////////////
-// setup
-////////////////////////////////
+//
+/*
+* setup()
+*/
 void setup() {
   pinMode(pin_rele, OUTPUT);
   vw_set_tx_pin(pin_tx);
-  vw_set_rx_pin(pin_rx); 
-  vw_setup(VELOCITAstd);              
+  vw_set_rx_pin(pin_rx);
+  vw_setup(VELOCITAstd);
   vw_rx_start();
   tempo=millis();
   Serial.begin(9600); // debug
 }
-
 //
-////////////////////////////////
-// loop
-////////////////////////////////
+/*
+* loop()
+*/
 void loop(){
-  ////////////////////////////////
-  // tieni il tempo
-  ////////////////////////////////
+/*
+** tieni il tempo
+*/
   if ((abs(millis()-tempo))>100){
     tempo=millis();
     decimi++;
-    ////begin ogni decimo///////////
-    ////end   ogni decimo///////////    
+    //BEGIN ogni decimo
+    //END   ogni decimo
     if (decimi>9){
-      ////begin ogni secondo//////////
-      ////end   ogni secondo//////////          
+      //BEGIN ogni secondo
+      //END ogni secondo
       decimi=0;
       secondi++;
       if (secondi>59){
-	////begin ogni minuto //////////
+	//BEGIN ogni minuto
 	chkTemperatura();
 	chkLuce();
-	////end   ogni minuto //////////          	
+	//END ogni minuto*
 	secondi=0;
 	minuti++;
 	if (minuti>250){
@@ -164,19 +170,16 @@ void loop(){
 	}
       }
     }
-    ////////////////////////////////
-    // controlla messaggi radio rx
-    ////////////////////////////////
+/*
+** radio rx
+*/
     if (vw_get_message(BYTEradio, &buflen)){
       vw_rx_stop();
-      // decifra
       decodeMessage();
-//Serial.println(MESSnum);
-      ///////primo switch/////////////
       switch (INTERIlocali[MESSnum]){
       case MASTRa:
 	// invio valori RAW di luce e temperatura
-	ROU_CANTIa(); 
+	ROU_CANTIa();
 	break;
 	// impostazione soglie variabili di luce/temperatura
       case MASTRb:
@@ -220,14 +223,13 @@ void loop(){
 	break;
       case MASTRj:
 	// diminuisce AGC
- //AGCdelay-=300;
 	fxSOGLIE(AGCdelay,-300,agcMAX,agcMIN);
 	ROU_CANTIc();
 	break;
       case MASTRk:
 	// invio valore AGC
 	ROU_CANTIc();
-	break;      
+	break;
       case MASTRl:
 	// salva valori su EEPROM
 	EEPROMsave() ;
@@ -241,7 +243,7 @@ void loop(){
 	DEFAULTload();
 	break;
       case MASTRo:
-	// invio STATI e tempi di temperatura e luce	
+	// invio STATI e tempi di temperatura e luce
 	ROU_CANTId();
 	break;
       case MASTRp:
@@ -253,7 +255,7 @@ void loop(){
 	// rele OFF
 	digitalWrite(pin_rele,LOW);
 	ROU_CANTIa();
-	break;	
+	break;
       case MASTRr:
 	// rele TOGGLE
 	digitalWrite(pin_rele,!digitalRead(pin_rele));
@@ -265,6 +267,9 @@ void loop(){
   }
 }
 
+/*
+* ROU_CANTId()
+*/
 ////////////////////////////////
 // trasmissione valore STATO/tempo
 ////////////////////////////////
@@ -279,7 +284,9 @@ void ROU_CANTId(){
   //
   tx();
 }
-
+/*
+* ROU_CANTIc()
+*/
 ////////////////////////////////
 // trasmissione valore AGC
 ////////////////////////////////
@@ -293,7 +300,9 @@ void ROU_CANTIc(){
   //
   tx();
 }
-
+/*
+* ROU_CANTIb()
+*/
 ////////////////////////////////
 // trasmissione soglie
 ////////////////////////////////
@@ -307,7 +316,9 @@ void ROU_CANTIb(){
   //
   tx();
 }
-
+/*
+* ROU_CANTIa()
+*/
 ////////////////////////////////
 // trasmissione valori sensori
 ////////////////////////////////
@@ -326,7 +337,9 @@ void ROU_CANTIa(){
   // tx
   tx();
 }
-
+/*
+* chkTemperatura()
+*/
 ////////////////////////////////
 // leggendo ogni minuto i valori di
 // temperatura, determina se la
@@ -352,10 +365,10 @@ void chkTemperatura(){
     tempVALpre=tempVAL;
   } else {
     if (tempVAL < (tempVALpre-tempSOGLIA)){
-      tempSTA=DISCESA;	
+      tempSTA=DISCESA;
       tempVALpre=tempVAL;
     }
-  }  
+  }
   if (tempSTA==tempSTApre){
     // lo stato e' lo stesso di prima
     tempMINUTIstato++;
@@ -365,7 +378,9 @@ void chkTemperatura(){
     tempSTApre=tempSTA;
   }
 }
-
+/*
+* chkLuce()
+*/
 ////////////////////////////////
 // controllando le soglie identifica
 // lo stato della porta della cantina
@@ -376,11 +391,11 @@ void chkLuce(){
   int sensorVal = analogRead(pin_light);
   // soglia
   if ((sensorVal>0) & (sensorVal<=luceSOGLIAa)) {
-    luceSTA=PORTACHIUSA;
+    luceSTA=LUCEpoca;
   } else if ((sensorVal>luceSOGLIAa) & (sensorVal<=luceSOGLIAb)){
-    luceSTA=PORTAAPERTA;
+    luceSTA=LUCEmedia;
   } else {
-    luceSTA=LUCECORRIDOIOACCESA;
+    luceSTA=LUCEtanta;
   }
   // cambio stato?
   if (luceSTA==luceSTApre){
@@ -390,7 +405,9 @@ void chkLuce(){
     luceSTApre=luceSTA;
   }
 }
-
+/*
+* fxSOGLIE()
+*/
 ////////////////////////////////
 // aumenta o decrementa una variabile
 // passata byRef
@@ -406,7 +423,7 @@ void fxSOGLIE(int& x, int INCDECx, int MAXx, int MINx) {
   Serial.println(b);
   Serial.println(MAXx);
   Serial.println(MINx);
-  
+
  // x+=INCDECx;
  if (b>MAXx){
   x=MAXx;
@@ -416,22 +433,27 @@ void fxSOGLIE(int& x, int INCDECx, int MAXx, int MINx) {
   }
 }
 
+/*
+* tx()
+*/
 void tx(){
   // codifica in bytes
-  encodeMessage();  
+  encodeMessage();
   //******************************
-  // prima di trasmettere attende 
+  // prima di trasmettere attende
   // che l'AGC di rx-MAESTRO
   // abbia recuperato
   //******************************
-  delay(AGCdelay); // IMPORTANTE 
+  delay(AGCdelay); // IMPORTANTE
   //******************************
   vw_rx_stop();
-  vw_send((uint8_t *)BYTEradio,BYTEStoTX); 
+  vw_send((uint8_t *)BYTEradio,BYTEStoTX);
   vw_wait_tx();
   vw_rx_start();
 }
-
+/*
+* decodeMessage()
+*/
 ////////////////////////////////
 // RADIO -> locale
 ////////////////////////////////
@@ -445,7 +467,9 @@ void decodeMessage(){
     m+=2;
   }
 }
-
+/*
+* encodeMessage()
+*/
 ////////////////////////////////
 // locale -> RADIO
 ////////////////////////////////
@@ -459,7 +483,9 @@ void encodeMessage(){
   }
   cipher();
 }
-
+/*
+* cipher()
+*/
 ////////////////////////////////
 // cifratura XOR del messaggio
 ////////////////////////////////
@@ -468,7 +494,9 @@ void cipher(){
     BYTEradio[n]=BYTEradio[n]^CIFR[n];
   }
 }
-
+/*
+* EEPROMsave()
+*/
 ////////////////////////////////
 // salvataggio valori su EEPROM
 ////////////////////////////////
@@ -488,7 +516,9 @@ void EEPROMsave(){
   EEPROM.write(6,lsb);
   EEPROM.write(7,msb);
 }
-
+/*
+* EEPROMload()
+*/
 ////////////////////////////////
 // caricamento valori da EEPROM
 ////////////////////////////////
@@ -508,7 +538,9 @@ void EEPROMload(){
   msb=EEPROM.read(7);
   AGCdelay=BYTEtoINT(lsb, msb);
 }
-
+/*
+* DEFAULTload()
+*/
 ////////////////////////////////
 // caricamento valori di default
 ////////////////////////////////
@@ -518,7 +550,9 @@ void DEFAULTload(){
   luceSOGLIAb=luceDEFsogliaB;
   AGCdelay=agcDEF;
 }
-
+/*
+* INTtoBYTE()
+*/
 ////////////////////////////////
 // conversione da intero a due bytes
 ////////////////////////////////
@@ -527,7 +561,9 @@ void INTtoBYTE(int x, byte& lsb, byte& msb){
   x = x >> 8;
   msb = x & 0x00FF;
 }
-
+/*
+* BYTEtoINT
+*/
 ////////////////////////////////
 // conversione da due byte ad un intero
 ////////////////////////////////
