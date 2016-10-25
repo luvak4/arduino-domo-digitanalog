@@ -540,17 +540,17 @@ void EEPROMsave(){
   byte lsb;
   byte msb;
   INTtoBYTE(tempSOGLIA,lsb,msb);
-  EEPROM.write(0,lsb);
-  EEPROM.write(1,msb);
+  EEPROM.write(EEPtempSogliaL,lsb);
+  EEPROM.write(EEPtempSogliaM,msb);
   INTtoBYTE(luceSOGLIAa,lsb,msb);
-  EEPROM.write(2,lsb);
-  EEPROM.write(3,msb);
+  EEPROM.write(EEPluceSoglia_a_L,lsb);
+  EEPROM.write(EEPluceSoglia_a_M,msb);
   INTtoBYTE(luceSOGLIAb,lsb,msb);
-  EEPROM.write(4,lsb);
-  EEPROM.write(5,msb);
+  EEPROM.write(EEPluceSoglia_b_L,lsb);
+  EEPROM.write(EEPluceSoglia_b_M,msb);
   INTtoBYTE(AGCdelay,lsb,msb);
-  EEPROM.write(6,lsb);
-  EEPROM.write(7,msb);
+  EEPROM.write(EEPagcDelayL,lsb);
+  EEPROM.write(EEPagcDelayM,msb);
 }
 /*--------------------------------
 * EEPROMload()
