@@ -311,9 +311,8 @@ void loop(){
 /*--------------------------------
 * ROU_CANTId()
 */
-////////////////////////////////
 // trasmissione valore STATO/tempo
-////////////////////////////////
+//
 void ROU_CANTId(){
   // imposta l'indirizzo
   INTERIlocali[MESSnum]=CANTId;
@@ -328,9 +327,8 @@ void ROU_CANTId(){
 /*--------------------------------
 * ROU_CANTIc()
 */
-////////////////////////////////
 // trasmissione valore AGC
-////////////////////////////////
+//
 void ROU_CANTIc(){
   // imposta l'indirizzo
   INTERIlocali[MESSnum]=CANTIc;
@@ -344,9 +342,8 @@ void ROU_CANTIc(){
 /*--------------------------------
 * ROU_CANTIb()
 */
-////////////////////////////////
 // trasmissione soglie
-////////////////////////////////
+//
 void ROU_CANTIb(){
   // imposta l'indirizzo
   INTERIlocali[MESSnum]=CANTIb;
@@ -360,9 +357,8 @@ void ROU_CANTIb(){
 /*--------------------------------
 * ROU_CANTIa()
 */
-////////////////////////////////
 // trasmissione valori sensori
-////////////////////////////////
+//
 void ROU_CANTIa(){
   // imposta l'indirizzo
   INTERIlocali[MESSnum]=CANTIa;
@@ -386,7 +382,6 @@ void ROU_CANTIa(){
 /*--------------------------------
 * chkTemperatura()
 */
-////////////////////////////////
 // leggendo ogni minuto i valori di
 // temperatura, determina se la
 // temperatura sta salendo o diminuendo.
@@ -397,7 +392,7 @@ void ROU_CANTIa(){
 // per evitare oscillazioni di su e giu
 // Prende nota dei minuti che la temperatura
 // sta nello stato corrente
-////////////////////////////////
+//
 void chkTemperatura(){
   int sensorVal = analogRead(pin_temp);
   float voltage = (sensorVal / 1024.0) * 5.0;
@@ -427,12 +422,11 @@ void chkTemperatura(){
 /*--------------------------------
 * chkLuce()
 */
-////////////////////////////////
 // controllando le soglie identifica
 // lo stato della porta della cantina
 // Prende nota dei minuti che la luce
 // sta nello stato corrente
-////////////////////////////////
+//
 void chkLuce(){
   int sensorVal = analogRead(pin_light);
   // soglia
@@ -454,10 +448,9 @@ void chkLuce(){
 /*--------------------------------
 * fxSOGLIE()
 */
-////////////////////////////////
 // aumenta o decrementa una variabile
 // passata byRef
-////////////////////////////////
+//
 void fxSOGLIE(int& x, int INCDECx, int MAXx, int MINx) {
    x+=INCDECx;
    int b=x;
@@ -490,9 +483,8 @@ void tx(){
 /*--------------------------------
 * decodeMessage()
 */
-////////////////////////////////
 // RADIO -> locale
-////////////////////////////////
+//
 void decodeMessage(){
   byte m=0;
   cipher();
@@ -506,9 +498,8 @@ void decodeMessage(){
 /*--------------------------------
 * encodeMessage()
 */
-////////////////////////////////
 // locale -> RADIO
-////////////////////////////////
+//
 void encodeMessage(){
   byte m=0;
   for (byte n=0; n<4;n++){
@@ -522,9 +513,8 @@ void encodeMessage(){
 /*--------------------------------
 * cipher()
 */
-////////////////////////////////
 // cifratura XOR del messaggio
-////////////////////////////////
+//
 void cipher(){
   for (byte n=0;n<8;n++){
     BYTEradio[n]=BYTEradio[n]^CIFR[n];
@@ -544,9 +534,8 @@ void EEPROMsaveRele(){
 /*--------------------------------
 * EEPROMsave()
 */
-////////////////////////////////
 // salvataggio valori su EEPROM
-////////////////////////////////
+//
 void EEPROMsave(){
   byte lsb;
   byte msb;
@@ -566,9 +555,8 @@ void EEPROMsave(){
 /*--------------------------------
 * EEPROMload()
 */
-////////////////////////////////
 // caricamento valori da EEPROM
-////////////////////////////////
+//
 void EEPROMload(){
   byte lsb;
   byte msb;
@@ -588,9 +576,8 @@ void EEPROMload(){
 /*--------------------------------
 * DEFAULTload()
 */
-////////////////////////////////
 // caricamento valori di default
-////////////////////////////////
+//
 void DEFAULTload(){
   tempSOGLIA=tempDEFsoglia;
   luceSOGLIAa=luceDEFsogliaA;
@@ -600,9 +587,8 @@ void DEFAULTload(){
 /*--------------------------------
 * INTtoBYTE()
 */
-////////////////////////////////
 // conversione da intero a due bytes
-////////////////////////////////
+//
 void INTtoBYTE(int x, byte& lsb, byte& msb){
   lsb =x & 0x00FF;
   x = x >> 8;
@@ -611,9 +597,8 @@ void INTtoBYTE(int x, byte& lsb, byte& msb){
 /*--------------------------------
 * BYTEtoINT()
 */
-////////////////////////////////
 // conversione da due byte ad un intero
-////////////////////////////////
+//
 int BYTEtoINT(byte& lsb, byte& msb){
   int x;
   x = msb;
