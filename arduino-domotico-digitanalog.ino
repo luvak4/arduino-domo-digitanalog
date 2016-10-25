@@ -3,32 +3,33 @@
 ////////////////////////////////
 
 /*
-  	      	+-----------+
-  	      	|           |
+                +-----------+
+                |           |
    light    --->| A0      2 |---> rele
    temperat --->| A1        |
                 |           |
    radio rx --->| 11     12 |---> radio tx
-  		|           |
-  		+-----------+
+                |           |
+                +-----------+
                    ARDUINO
                   ATMEGA 328
 */
 
-/*
+/*--------------------------------
 * configurazioni
 */
 #include <VirtualWire.h>
 #include <EEPROM.h>
-/*
+/*--------------------------------
 ** pins
 */
-#define pin_rele   2
+#define pin_releA  2
+#define pin_releB  3
 #define pin_rx    11
 #define pin_tx    12
 #define pin_light A0
 #define pin_temp  A1
-/*
+/*--------------------------------
 ** soglie
 */
 #define tempMAXsoglia  1000
@@ -43,7 +44,7 @@
 #define agcMIN 300
 #define agcDEF 1000
 #define agcMAX 1500
-/*
+/*--------------------------------
 ** domande (IN)
 */
 #define MASTRa 101 // get luce/temp/rele               (CANTIa)
@@ -61,10 +62,13 @@
 #define MASTRm 113 // >>> carica EEPROM                (CANTIokB)
 #define MASTRn 114 // >>> carica DEFAULT               (CANTIokC)
 #define MASTRo 115 // get temp/luce STATO/tempo        (CANTId)
-#define MASTRp 116 // rele ON                          (CANTIa)
-#define MASTRq 117 // rele OFF                         (CANTIa)
-#define MASTRr 118 // rele toggle                      (CANTIa)
-/*
+#define MASTRp 116 // rele A ON                          (CANTIa)
+#define MASTRq 117 // rele A OFF                         (CANTIa)
+#define MASTRr 118 // rele A toggle                      (CANTIa)
+#define MASTRpp 119 // rele B ON                          (CANTIa)
+#define MASTRqq 120 // rele B OFF                         (CANTIa)
+#define MASTRrr 121 // rele B toggle                      (CANTIa)
+/*--------------------------------
 ** risposte (OUT)
 */
 #define CANTIa   1000 // get value luce/temp/rele
@@ -74,7 +78,7 @@
 #define CANTIokA 1004 // get ok salva eprom
 #define CANTIokB 1005 // get ok carica eprom
 #define CANTIokC 1006 // get ok carica default
-/*
+/*--------------------------------
 ** comunicazione radio principale
 */
 #define VELOCITAstd   500
@@ -86,7 +90,7 @@
 int     INTERIlocali[4]={0,0,0,0};
 byte    BYTEradio[BYTEStoTX];
 uint8_t buflen = BYTEStoTX; //for rx
-/*
+/*--------------------------------
 ** stati
 */
 #define SALITA              1
@@ -96,7 +100,7 @@ uint8_t buflen = BYTEStoTX; //for rx
 #define LUCEtanta           2
 #define RELEon              1
 #define RELEoff             0
-/*
+/*--------------------------------
 ** variabili temperatura e luce
 */
 int  tempVAL;
@@ -115,7 +119,19 @@ int tempSOGLIA  = tempDEFsoglia;
 int luceSOGLIAa = luceDEFsogliaA;
 int luceSOGLIAb = luceDEFsogliaB;
 int AGCdelay    = agcDEF;
-/*
+/*--------------------------------
+** EEPROM indirizzi
+*/
+#define EEPtempSogliaL     0
+#define EEPtempSogliaM     1
+#define EEPluceSoglia_a_L  2
+#define EEPluceSoglia_a_M  3
+#define EEPluceSoglia_b_L  4
+#define EEPluceSoglia_b_M  5
+#define EEPagcDelayL       6
+#define EEPagcDelayM       7
+#define EEPrele            8
+/*--------------------------------
 ** varie
 */
 byte CIFR[]={223,205,228,240,43,146,241,//
@@ -128,24 +144,33 @@ byte decimi;
 byte secondi;
 byte minuti;
 //
-/*
+/*////////////////////////////////
 * setup()
 */
 void setup() {
-  pinMode(pin_rele, OUTPUT);
+  pinMode(pin_releA, OUTPUT);
+  pinMode(pin_releB, OUTPUT);
   vw_set_tx_pin(pin_tx);
   vw_set_rx_pin(pin_rx);
   vw_setup(VELOCITAstd);
   vw_rx_start();
   tempo=millis();
   Serial.begin(9600); // debug
+  // carica stato rele da EEPROM
+  byte n=EEPROM.read(EEPrele);
+  n=n & 1;
+  digitalWrite(pin_releA,n);
+  n=EEPROM.read(EEPrele);
+  n=n>>1;
+  n=n & 1;
+  digitalWrite(pin_releB,n);
 }
 //
-/*
+/*////////////////////////////////
 * loop()
 */
 void loop(){
-/*
+/*--------------------------------
 ** tieni il tempo
 */
   if ((abs(millis()-tempo))>100){
@@ -170,7 +195,7 @@ void loop(){
 	}
       }
     }
-/*
+/*--------------------------------
 ** radio rx
 */
     if (vw_get_message(BYTEradio, &buflen)){
@@ -248,26 +273,42 @@ void loop(){
 	break;
       case MASTRp:
 	// rele ON
-	digitalWrite(pin_rele,HIGH);
+	digitalWrite(pin_releA,HIGH);
 	ROU_CANTIa();
 	break;
       case MASTRq:
 	// rele OFF
-	digitalWrite(pin_rele,LOW);
+	digitalWrite(pin_releA,LOW);
 	ROU_CANTIa();
 	break;
       case MASTRr:
 	// rele TOGGLE
-	digitalWrite(pin_rele,!digitalRead(pin_rele));
+	digitalWrite(pin_releA,!digitalRead(pin_releA));
 	ROU_CANTIa();
 	break;
+      case MASTRpp:
+	// rele ON
+	digitalWrite(pin_releB,HIGH);
+	ROU_CANTIa();
+	break;
+      case MASTRqq:
+	// rele OFF
+	digitalWrite(pin_releB,LOW);
+	ROU_CANTIa();
+	break;
+      case MASTRrr:
+	// rele TOGGLE
+	digitalWrite(pin_releB,!digitalRead(pin_releB));
+	ROU_CANTIa();
+	break;
+
       }
       vw_rx_start();
     }
   }
 }
 
-/*
+/*--------------------------------
 * ROU_CANTId()
 */
 ////////////////////////////////
@@ -284,7 +325,7 @@ void ROU_CANTId(){
   //
   tx();
 }
-/*
+/*--------------------------------
 * ROU_CANTIc()
 */
 ////////////////////////////////
@@ -300,7 +341,7 @@ void ROU_CANTIc(){
   //
   tx();
 }
-/*
+/*--------------------------------
 * ROU_CANTIb()
 */
 ////////////////////////////////
@@ -316,7 +357,7 @@ void ROU_CANTIb(){
   //
   tx();
 }
-/*
+/*--------------------------------
 * ROU_CANTIa()
 */
 ////////////////////////////////
@@ -333,11 +374,16 @@ void ROU_CANTIa(){
   // valori in memoria
   INTERIlocali[DATOa]=analogRead(pin_light);
   INTERIlocali[DATOb]=temper;
-  INTERIlocali[DATOc]=digitalRead(pin_rele);
+  // stato rele A e B
+  byte n=digitalRead(pin_releB);
+  n = n<<1;
+  n = n & digitalRead(pin_releA);
+  //
+  INTERIlocali[DATOc] = n;
   // tx
   tx();
 }
-/*
+/*--------------------------------
 * chkTemperatura()
 */
 ////////////////////////////////
@@ -378,7 +424,7 @@ void chkTemperatura(){
     tempSTApre=tempSTA;
   }
 }
-/*
+/*--------------------------------
 * chkLuce()
 */
 ////////////////////////////////
@@ -405,7 +451,7 @@ void chkLuce(){
     luceSTApre=luceSTA;
   }
 }
-/*
+/*--------------------------------
 * fxSOGLIE()
 */
 ////////////////////////////////
@@ -413,27 +459,17 @@ void chkLuce(){
 // passata byRef
 ////////////////////////////////
 void fxSOGLIE(int& x, int INCDECx, int MAXx, int MINx) {
-//if (INCDECx>0){
-  x+=INCDECx;
-//} else {
-//  INCDECx=abs(INCDECx);
-//  x-=INCDECx;
-//}
-  int b=x;
-  Serial.println(b);
-  Serial.println(MAXx);
-  Serial.println(MINx);
-
- // x+=INCDECx;
- if (b>MAXx){
-  x=MAXx;
- }
- if (b<MINx){
-  x=MINx;
-  }
+   x+=INCDECx;
+   int b=x;
+   if (b>MAXx){
+      x=MAXx;
+   }
+   if (b<MINx){
+      x=MINx;
+   }
 }
 
-/*
+/*--------------------------------
 * tx()
 */
 void tx(){
@@ -451,7 +487,7 @@ void tx(){
   vw_wait_tx();
   vw_rx_start();
 }
-/*
+/*--------------------------------
 * decodeMessage()
 */
 ////////////////////////////////
@@ -467,7 +503,7 @@ void decodeMessage(){
     m+=2;
   }
 }
-/*
+/*--------------------------------
 * encodeMessage()
 */
 ////////////////////////////////
@@ -483,7 +519,7 @@ void encodeMessage(){
   }
   cipher();
 }
-/*
+/*--------------------------------
 * cipher()
 */
 ////////////////////////////////
@@ -494,7 +530,18 @@ void cipher(){
     BYTEradio[n]=BYTEradio[n]^CIFR[n];
   }
 }
-/*
+/*--------------------------------
+* EEPROMsaveRele()
+*/
+// salvataggio stato rele
+//
+void EEPROMsaveRele(){
+  byte n=digitalRead(pin_releB);
+  n = n<<1;
+  n=n & digitalRead(pin_releA);
+  EEPROM.write(EEPrele,n);
+}
+/*--------------------------------
 * EEPROMsave()
 */
 ////////////////////////////////
@@ -516,7 +563,7 @@ void EEPROMsave(){
   EEPROM.write(6,lsb);
   EEPROM.write(7,msb);
 }
-/*
+/*--------------------------------
 * EEPROMload()
 */
 ////////////////////////////////
@@ -525,20 +572,20 @@ void EEPROMsave(){
 void EEPROMload(){
   byte lsb;
   byte msb;
-  lsb=EEPROM.read(0);
-  msb=EEPROM.read(1);
+  lsb=EEPROM.read(EEPtempSogliaL);
+  msb=EEPROM.read(EEPtempSogliaM);
   tempSOGLIA=BYTEtoINT(lsb, msb);
-  lsb=EEPROM.read(2);
-  msb=EEPROM.read(3);
+  lsb=EEPROM.read(EEPluceSoglia_a_L);
+  msb=EEPROM.read(EEPluceSoglia_a_M);
   luceSOGLIAa=BYTEtoINT(lsb, msb);
-  lsb=EEPROM.read(4);
-  msb=EEPROM.read(5);
+  lsb=EEPROM.read(EEPluceSoglia_b_L);
+  msb=EEPROM.read(EEPluceSoglia_b_M);
   luceSOGLIAb=BYTEtoINT(lsb, msb);
-  lsb=EEPROM.read(6);
-  msb=EEPROM.read(7);
+  lsb=EEPROM.read(EEPagcDelayL);
+  msb=EEPROM.read(EEPagcDelayM);
   AGCdelay=BYTEtoINT(lsb, msb);
 }
-/*
+/*--------------------------------
 * DEFAULTload()
 */
 ////////////////////////////////
@@ -550,7 +597,7 @@ void DEFAULTload(){
   luceSOGLIAb=luceDEFsogliaB;
   AGCdelay=agcDEF;
 }
-/*
+/*--------------------------------
 * INTtoBYTE()
 */
 ////////////////////////////////
@@ -561,8 +608,8 @@ void INTtoBYTE(int x, byte& lsb, byte& msb){
   x = x >> 8;
   msb = x & 0x00FF;
 }
-/*
-* BYTEtoINT
+/*--------------------------------
+* BYTEtoINT()
 */
 ////////////////////////////////
 // conversione da due byte ad un intero
